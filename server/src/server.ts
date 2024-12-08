@@ -1,18 +1,13 @@
-'use strict';
-
-// Import necessary modules
 import express from 'express';
 import { Server, Socket } from 'socket.io';
 import cors from 'cors';
 
-// Define types for the incoming message data
 type OfferData = { from: string; to: string; type: string };
 type SignalingData = { type: string; to: string; [key: string]: any };
 
 // Map to store connected peers
 const peers: Map<string, Socket> = new Map(); // {peerId: socketObject}
 
-// Configuration settings
 const config = {
     iceServers: [{ urls: 'stun:stun.l.google.com:19302' }], // STUN server for WebRTC
 };
@@ -25,7 +20,7 @@ const domain: string = process.env.DOMAIN || 'localhost';
 const port: number = Number(process.env.PORT) || 4000;
 
 // Middleware to enable CORS and parse JSON
-app.use(cors({ origin: process.env.CORS_ORIGIN || '*' })); // Can be configured for production
+app.use(cors({ origin: process.env.CORS_ORIGIN || '*' }));
 app.use(express.json());
 
 // Create Socket.IO instance attached to the Express app
