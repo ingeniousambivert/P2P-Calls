@@ -34,6 +34,7 @@ const io: Server = new Server(
         console.log(`Server running at http://${domain}:${port}`);
         console.log('ICE Servers:', config.iceServers);
     }),
+    { cors: { origin: process.env.CORS_ORIGIN || '*' } },
 );
 
 // Handle WebSocket connections
