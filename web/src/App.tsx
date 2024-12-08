@@ -27,7 +27,11 @@ type Message = {
 };
 
 const config: RTCConfiguration = {
-  iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+  iceServers: [
+    {
+      urls: ["stun:stun1.l.google.com:19302", "stun:stun2.l.google.com:19302"],
+    },
+  ],
 };
 
 const getFromStorage = (key: string) => {
@@ -195,8 +199,6 @@ const App: React.FC = () => {
   };
 
   const handleOffer = (message: Message) => {
-    console.log("Handling offer:", message);
-
     if (!message.offer || !stream) return;
     if (!connectionRef.current) {
       initializeConnection();
@@ -251,7 +253,7 @@ const App: React.FC = () => {
       initializeConnection();
     }
     connectionRef.current
-      ?.createOffer()
+      ?.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: true })
       .then((offer) => {
         connectionRef.current?.setLocalDescription(offer);
         if (socketRef.current) {

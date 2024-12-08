@@ -9,7 +9,7 @@ type SignalingData = { type: string; to: string; [key: string]: any };
 const peers: Map<string, Socket> = new Map(); // {peerId: socketObject}
 
 const config = {
-    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }], // STUN server for WebRTC
+    iceServers: [{ urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] }], // STUN server for WebRTC
 };
 
 // Create Express application
