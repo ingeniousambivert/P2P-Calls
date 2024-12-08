@@ -23,6 +23,7 @@ type Message = {
   to?: string;
   message?: string;
   error?: string;
+  peerId?: string;
 };
 
 const config: RTCConfiguration = {
@@ -254,51 +255,29 @@ const App: React.FC = () => {
       ?.createOffer()
       .then((offer) => {
         connectionRef.current?.setLocalDescription(offer);
-        if (socketRef.current && peerIdToConnect) {
+        if (socketRef.current) {
           socketRef.current.emit("message", {
             type: "offer",
             offer,
-            to: peerIdToConnect,
-            from: peerId,
           });
         } else {
-          setError("Peer ID to connect not found - handleOfferCreate");
+          setError("Socket connection is not established.");
         }
       })
       .catch((error) => {
         setError(`Error when creating an offer. ${error}`);
       });
-    console.log({
-      peerId,
-      peerIdToConnect,
-      type: "offer",
-      offer: connectionRef.current?.localDescription,
-    });
   };
 
   const handleOfferAccept = (message: Message) => {
-    if (!peerId || !peerIdToConnect) {
-      setError("Peer ID/s not set - handleOfferAccept");
-      return;
-    }
-
     if (socketRef.current) {
       socketRef.current.emit("message", {
+        ...message,
         type: "offerCreate",
-        from: peerId,
-        to: peerIdToConnect,
-        offer: connectionRef.current?.localDescription,
       });
     } else {
       setError("Socket connection is not established.");
     }
-
-    console.log({
-      peerId,
-      peerIdToConnect,
-      type: "offerCreate",
-      offer: connectionRef.current?.localDescription,
-    });
   };
 
   const handleCall = () => {
@@ -321,12 +300,6 @@ const App: React.FC = () => {
     } else {
       setError("Socket connection is not established.");
     }
-
-    console.log({
-      peerId,
-      peerIdToConnect,
-      type: "offerAccept",
-    });
   };
 
   const handleHangUp = () => {
@@ -340,7 +313,9 @@ const App: React.FC = () => {
   };
 
   const handleNotFound = (message: Message) => {
-    setError(`User ${message.from}/${message.to} not found.`);
+    console.log("tesing handleNotFound", message);
+
+    setError(`User ${message.peerId} not found.`);
   };
 
   const handleError = (message: Message) => {

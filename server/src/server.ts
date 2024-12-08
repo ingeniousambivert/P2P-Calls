@@ -95,7 +95,7 @@ function handleConnection(socket: Socket): void {
             peers.set(peerId, socket); // Store the entire socket object
             socket.data.peerId = peerId; // Store peerId in socket data
             console.log(`[${new Date().toISOString()}] Peer set successfully: ${peerId}`);
-            sendMessage(socket, { type: 'registerPeer', error: null, message: 'PeerId registered successfully' });
+            sendMessage(socket, { type: 'registerPeer', message: 'PeerId registered successfully' });
             console.log(`[${new Date().toISOString()}] Connected Peers:`, getConnectedPeers());
         } else {
             console.log(`[${new Date().toISOString()}] Failed, peerId already in use: ${peerId}`);
