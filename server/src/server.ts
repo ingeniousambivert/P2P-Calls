@@ -152,7 +152,7 @@ function handleConnection(socket: Socket): void {
                 break;
             default:
                 if (recipientSocket) {
-                    console.log(`[${new Date().toISOString()}] Forwarding signaling message to ${to}`);
+                    console.log(`[${new Date().toISOString()}] Forwarding signaling message ${type} to ${to}`);
                     sendMessage(recipientSocket, { ...data, from: peerId });
                 }
                 break;

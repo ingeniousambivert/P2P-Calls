@@ -131,8 +131,7 @@ const App: React.FC = () => {
   };
 
   const handleMessage = (message: Message) => {
-    console.log("Received message:", message);
-
+    console.log("Received message:", message.type);
     switch (message.type) {
       case "ping":
         handlePing(message);
@@ -242,7 +241,7 @@ const App: React.FC = () => {
       connectionRef.current
         .addIceCandidate(new RTCIceCandidate(message.candidate))
         .catch((error) => {
-          setError(`Error when add ice candidate. ${error}`);
+          setError(`Error when adding ice candidate: ${error}`);
         });
     }
   };
@@ -369,12 +368,18 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    console.log("peerId updated:", peerId);
-  }, [peerId]);
-
-  useEffect(() => {
-    console.log("peerIdToConnect updated:", peerIdToConnect);
-  }, [peerIdToConnect]);
+    if (connectionRef.current) {
+      connectionRef.current.onicecandidate = (event) => {
+        if (event.candidate) {
+          console.log("New ICE candidate:", event.candidate);
+          socketRef.current?.emit("message", {
+            type: "candidate",
+            candidate: event.candidate,
+          });
+        }
+      };
+    }
+  }, [connectionRef.current]);
 
   return (
     <div>
