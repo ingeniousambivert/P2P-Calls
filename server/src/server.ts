@@ -54,8 +54,8 @@ function handleConnection(socket: Socket): void {
         console.log(`[${new Date().toISOString()}] Received message of type '${type}' from ${peerId ?? socket.id}`);
 
         switch (type) {
-            case 'setPeerId':
-                handleSetPeerId(data);
+            case 'registerPeer':
+                handleRegisterPeer(data);
                 break;
             case 'offerAccept':
             case 'offerDecline':
@@ -80,7 +80,7 @@ function handleConnection(socket: Socket): void {
     // Send a ping message to the newly connected client and iceServers for peer connection
     function sendPing(socket: Socket): void {
         console.log(`[${new Date().toISOString()}] Sending 'ping' message to ${socket.id}`);
-        sendMsgTo(socket, {
+        sendMessage(socket, {
             type: 'ping',
             message: 'Hello Client!',
             iceServers: config.iceServers,
@@ -88,26 +88,27 @@ function handleConnection(socket: Socket): void {
     }
 
     // Function to handle peer sign-in request
-    function handleSetPeerId(data: { peerId: string }): void {
+    function handleRegisterPeer(data: { peerId: string }): void {
         const { peerId } = data;
 
         if (!peers.has(peerId)) {
             peers.set(peerId, socket); // Store the entire socket object
             socket.data.peerId = peerId; // Store peerId in socket data
             console.log(`[${new Date().toISOString()}] Peer set successfully: ${peerId}`);
-            sendMsgTo(socket, { type: 'setPeerId', success: true });
+            sendMessage(socket, { type: 'registerPeer', error: null, message: 'PeerId registered successfully' });
             console.log(`[${new Date().toISOString()}] Connected Peers:`, getConnectedPeers());
         } else {
             console.log(`[${new Date().toISOString()}] Failed, peerId already in use: ${peerId}`);
-            sendMsgTo(socket, { type: 'setPeerId', success: false, message: 'PeerId already in use' });
+            sendMessage(socket, { type: 'registerPeer', error: true, message: 'PeerId already in use' });
         }
     }
 
     // Function to handle offer requests
     function handleOffer(data: OfferData): void {
         const { from, to, type } = data;
-        const senderSocket = peers.get(from)?.id;
-        const recipientSocket = peers.get(to);
+        const reciever = type === 'offerAccept' ? to : from;
+        const recipientSocket = peers.get(reciever);
+        console.log(data);
 
         console.log(`[${new Date().toISOString()}] Processing offer for recipient: ${to}`);
 
@@ -116,22 +117,22 @@ function handleConnection(socket: Socket): void {
             case 'offerCreate':
                 if (recipientSocket) {
                     console.log(`[${new Date().toISOString()}] Sending offer data to ${to}`);
-                    sendMsgTo(recipientSocket, data);
+                    sendMessage(recipientSocket, data);
                 } else {
-                    console.warn(`[${new Date().toISOString()}] Recipient ${to} not found`);
-                    sendMsgTo(socket, { type: 'notfound', peerId: to });
+                    console.error(`[${new Date().toISOString()}] Recipient ${reciever} not found - ${type}`);
+                    sendMessage(socket, { type: 'notfound', peerId: reciever });
                 }
                 break;
             case 'offerDecline':
-                console.warn(`[${new Date().toISOString()}] Peer ${from} declined the offer`);
+                console.error(`[${new Date().toISOString()}] Peer ${from} declined the offer`);
                 if (recipientSocket) {
                     sendError(recipientSocket, `Peer ${from} declined your call`);
                 } else {
-                    sendError(socket, `Recipient ${to} not found`);
+                    sendError(socket, `Recipient ${to} not found ${type}`);
                 }
                 break;
             default:
-                console.warn(`[${new Date().toISOString()}] Unknown offer type: ${type}`);
+                console.error(`[${new Date().toISOString()}] Unknown offer type: ${type}`);
                 break;
         }
     }
@@ -146,13 +147,13 @@ function handleConnection(socket: Socket): void {
             case 'leave':
                 if (recipientSocket) {
                     console.log(`[${new Date().toISOString()}] Peer left: ${peerId}`);
-                    sendMsgTo(recipientSocket, { type: 'leave' });
+                    sendMessage(recipientSocket, { type: 'leave' });
                 }
                 break;
             default:
                 if (recipientSocket) {
                     console.log(`[${new Date().toISOString()}] Forwarding signaling message to ${to}`);
-                    sendMsgTo(recipientSocket, { ...data, from: peerId });
+                    sendMessage(recipientSocket, { ...data, from: peerId });
                 }
                 break;
         }
@@ -176,7 +177,7 @@ function getConnectedPeers(): string[] {
 }
 
 // Function to send a message to a specific connection
-function sendMsgTo(socket: Socket, message: { type: string; [key: string]: any }): void {
+function sendMessage(socket: Socket, message: { type: string; [key: string]: any }): void {
     console.log(`[${new Date().toISOString()}] Sending message:`, message.type);
     socket.emit('message', message);
 }
@@ -184,5 +185,5 @@ function sendMsgTo(socket: Socket, message: { type: string; [key: string]: any }
 // Function to send an error message to a specific connection
 function sendError(socket: Socket, message: string): void {
     console.error(`[${new Date().toISOString()}] Error: ${message}`);
-    sendMsgTo(socket, { type: 'error', message });
+    sendMessage(socket, { type: 'error', message });
 }
